@@ -1,6 +1,7 @@
 /Library/
 /Logs/
 /Temp/
+/obj/
 /UserSettings/
 
 *.csproj
