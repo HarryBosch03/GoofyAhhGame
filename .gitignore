@@ -3,6 +3,7 @@
 /Temp/
 /obj/
 /UserSettings/
+/Build/
 
 *.csproj
 *.sln
