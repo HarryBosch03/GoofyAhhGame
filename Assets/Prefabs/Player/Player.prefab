@@ -203,6 +203,7 @@ GameObject:
   - component: {fileID: 2175819613032524577}
   - component: {fileID: 4943198994501268292}
   - component: {fileID: 8332131725387252423}
+  - component: {fileID: 218384520006227561}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -250,6 +251,7 @@ MonoBehaviour:
   jumpHeight: 2
   height: 1.8
   radius: 0.3
+  bottomGap: 0.3
   cameraPivot: 1.45
   cameraHeight: 1.7
 --- !u!114 &2175819613032524577
@@ -302,7 +304,7 @@ MonoBehaviour:
   _initializedValusSet: 0
   NetworkObserver: {fileID: 0}
   _enablePrediction: 1
-  _predictionType: 0
+  _predictionType: 1
   _graphicalObject: {fileID: 6182360750302440310}
   _detachGraphicalObject: 0
   _enableStateForwarding: 1
@@ -340,6 +342,33 @@ MonoBehaviour:
   _networkObjectCache: {fileID: 0}
   weaponsParent: {fileID: 5179032443212811442}
   currentWeapon: {fileID: 0}
+--- !u!54 &218384520006227561
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3521906830390992076}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 112
+  m_CollisionDetection: 2
 --- !u!1 &3776062933511258848
 GameObject:
   m_ObjectHideFlags: 0

@@ -6,6 +6,7 @@ using UnityEngine;
 
 namespace Runtime.Player
 {
+    [RequireComponent(typeof(Rigidbody))]
     public class PlayerMotor : NetworkBehaviour
     {
         public float maxMoveSpeed;
@@ -19,22 +20,17 @@ namespace Runtime.Player
         [Space]
         public float height;
         public float radius;
+        public float bottomGap = 0.3f;
         public float cameraPivot;
         public float cameraHeight;
 
         private new CapsuleCollider collider;
         private float lastJumpTimer;
 
-        // --- Input ---
-        public Vector3 moveDirection { get; set; }
-        public bool jump { get; set; }
-        public Vector2 rotation { get; set; }
-
-        // --- State ---
+        public Rigidbody body { get; private set; }
         public Vector3 headPosition => interpolatedPosition + Vector3.up * cameraPivot + headRotation * Vector3.up * (cameraHeight - cameraPivot);
         public Vector3 rawHeadPosition => transform.position + Vector3.up * height;
         public Quaternion headRotation => Quaternion.Euler(-rotation.y, rotation.x, 0f);
-        public Vector3 velocity { get; set; }
         public Vector3 interpolatedPosition
         {
             get
@@ -44,26 +40,42 @@ namespace Runtime.Player
                 return transform.position;
             }
         }
+        
+        // --- Input ---
+        public Vector3 moveDirection { get; set; }
+        public bool jump { get; set; }
+        public Vector2 rotation { get; set; }
+
+        // --- State ---
         public bool onGround { get; private set; }
 
         private void Awake()
         {
             collider = new GameObject("Collision").AddComponent<CapsuleCollider>();
             collider.transform.SetParent(transform);
-            collider.transform.SetLocalPositionAndRotation(Vector3.up * height / 2f, Quaternion.identity);
+            collider.transform.SetLocalPositionAndRotation(Vector3.up * (height + bottomGap) / 2f, Quaternion.identity);
 
-            collider.height = height;
+            collider.height = height - bottomGap;
             collider.radius = radius;
+
+            body = GetComponent<Rigidbody>();
         }
 
         public override void OnStartNetwork()
         {
             TimeManager.OnTick += OnTick;
+            TimeManager.OnPostTick += OnPostTick;
         }
 
         public override void OnStopNetwork()
         {
             TimeManager.OnTick -= OnTick;
+            TimeManager.OnPostTick -= OnPostTick;
+        }
+
+        private void OnPostTick()
+        {
+            CreateReconcile();
         }
 
         private void LateUpdate()
@@ -83,7 +95,6 @@ namespace Runtime.Player
 
         private void OnTick()
         {
-            CreateReconcile();
             RunInputs(GetInputData());
         }
 
@@ -99,14 +110,10 @@ namespace Runtime.Player
         [Replicate]
         private void RunInputs(InputData input, ReplicateState state = ReplicateState.Invalid, Channel channel = Channel.Unreliable)
         {
-            if (state.IsFuture()) return;
-            
             CheckForGround();
             Move(input);
             Jump(input);
             Rotate(ref input.rotation);
-            Iterate();
-            Collide();
             
             if (!IsOwner) rotation = input.rotation;
         }
@@ -121,7 +128,7 @@ namespace Runtime.Player
         private void Reconcile(StateData data, Channel channel = Channel.Unreliable)
         {
             transform.position = data.position;
-            velocity = data.velocity;
+            body.linearVelocity = data.velocity;
             lastJumpTimer = data.lastJumpTimer;
         }
 
@@ -129,10 +136,10 @@ namespace Runtime.Player
         {
             if (input.jump && onGround)
             {
-                velocity = new Vector3
+                body.linearVelocity = new Vector3
                 {
-                    x = velocity.x,
-                    z = velocity.z,
+                    x = body.linearVelocity.x,
+                    z = body.linearVelocity.z,
                     y = Mathf.Sqrt(2f * -Physics.gravity.y * jumpHeight)
                 };
                 lastJumpTimer = 0f;
@@ -161,51 +168,29 @@ namespace Runtime.Player
                     y = hit.point.y,
                     z = transform.position.z,
                 };
-                velocity = new Vector3()
+                body.linearVelocity = new Vector3()
                 {
-                    x = velocity.x,
-                    y = Mathf.Max(0f, velocity.y),
-                    z = velocity.z,
+                    x = body.linearVelocity.x,
+                    y = Mathf.Max(0f, body.linearVelocity.y),
+                    z = body.linearVelocity.z,
                 };
                 onGround = true;
             }
         }
 
-        private void Collide()
-        {
-            var board = Physics.OverlapBox(collider.bounds.center, collider.bounds.extents);
-            foreach (var other in board)
-            {
-                if (other.transform.IsChildOf(transform)) continue;
-                if (other.isTrigger) continue;
-
-                if (Physics.ComputePenetration(collider, collider.transform.position, collider.transform.rotation, other, other.transform.position, other.transform.rotation, out var normal, out var depth))
-                {
-                    transform.position += normal * depth;
-                    velocity += normal * Mathf.Max(0f, Vector3.Dot(normal, -velocity));
-                }
-            }
-        }
-
-        private void Iterate()
-        {
-            transform.position += velocity * Time.fixedDeltaTime;
-            velocity += Physics.gravity * Time.fixedDeltaTime;
-        }
-
         private void Move(InputData input)
         {
             var target = input.moveDirection * maxMoveSpeed;
-            var velocity = this.velocity;
+            var velocity = body.linearVelocity;
 
             var acceleration = maxMoveSpeed * Time.fixedDeltaTime / moveAccelerationTime;
             if (!onGround) acceleration *= 1f - moveAccelerationAirPenalty;
             velocity = Vector3.MoveTowards(velocity, target, acceleration);
 
-            this.velocity = new Vector3()
+            body.linearVelocity = new Vector3()
             {
                 x = velocity.x,
-                y = this.velocity.y,
+                y = body.linearVelocity.y,
                 z = velocity.z,
             };
         }
@@ -250,7 +235,7 @@ namespace Runtime.Player
             public StateData(PlayerMotor motor) : this()
             {
                 position = motor.transform.position;
-                velocity = motor.velocity;
+                velocity = motor.body.linearVelocity;
                 lastJumpTimer = motor.lastJumpTimer;
             }
 

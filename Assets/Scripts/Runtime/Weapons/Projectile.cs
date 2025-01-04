@@ -43,7 +43,6 @@ namespace Runtime.Weapons
                 if (trail != null)
                 {
                     trail.transform.SetParent(null);
-                    trail.transform.position = hit.point;
                     Destroy(trail.gameObject, trail.time + 1f);
                 }
                 Destroy(gameObject);

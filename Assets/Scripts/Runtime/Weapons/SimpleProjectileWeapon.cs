@@ -81,7 +81,7 @@ namespace Runtime.Weapons
                 if (state == ReplicateState.CurrentCreated)
                 {
                     var projectile = Instantiate(projectilePrefab, motor.rawHeadPosition + motor.headRotation * Vector3.forward * motor.radius * 1.5f, motor.headRotation);
-                    projectile.velocity = motor.velocity + motor.headRotation * Vector3.forward * projectileSpeed;
+                    projectile.velocity = motor.body.linearVelocity + motor.headRotation * Vector3.forward * projectileSpeed;
                     if (visualMuzzle != null) projectile.interpolatePosition = visualMuzzle.position;
                     projectile.HitEvent += OnProjectileHit;
                     if (flashFX != null) flashFX.Play();
