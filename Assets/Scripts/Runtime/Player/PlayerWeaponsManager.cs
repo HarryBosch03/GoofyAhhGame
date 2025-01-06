@@ -1,11 +1,9 @@
-using System;
-using FishNet.Object;
 using Runtime.Weapons;
 using UnityEngine;
 
-namespace Runtime
+namespace Runtime.Player
 {
-    public class PlayerWeaponsManager : NetworkBehaviour
+    public class PlayerWeaponsManager : MonoBehaviour
     {
         public Transform weaponsParent;
         public SimpleProjectileWeapon currentWeapon;

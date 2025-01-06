@@ -55,6 +55,8 @@ namespace Runtime.Weapons
 
             distanceTraveled += velocity.magnitude * Time.fixedDeltaTime;
             if (distanceTraveled > maxDistance) Destroy(gameObject);
+
+            transform.rotation = Quaternion.LookRotation((transform.forward + velocity * Time.deltaTime).normalized, Vector3.up);
         }
 
         private void LateUpdate()

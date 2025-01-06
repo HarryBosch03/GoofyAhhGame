@@ -13,7 +13,9 @@
     "com.unity.render-pipelines.universal": "17.0.3",
     "com.unity.test-framework": "1.4.5",
     "com.unity.timeline": "1.8.7",
+    "com.unity.transport": "2.4.0",
     "com.unity.ugui": "2.0.0",
+    "purrnet": "https://github.com/BlenMiner/PurrNet.git?path=/Assets/PurrNet#release",
     "com.unity.modules.accessibility": "1.0.0",
     "com.unity.modules.ai": "1.0.0",
     "com.unity.modules.androidjni": "1.0.0",
@@ -30,6 +32,7 @@
     "com.unity.modules.screencapture": "1.0.0",
     "com.unity.modules.tilemap": "1.0.0",
     "com.unity.modules.ui": "1.0.0",
-    "com.unity.modules.uielements": "1.0.0"
+    "com.unity.modules.uielements": "1.0.0",
+    "com.unity.modules.unitywebrequest": "1.0.0"
   }
 }

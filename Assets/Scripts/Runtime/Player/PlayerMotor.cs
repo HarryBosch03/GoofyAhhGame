@@ -1,12 +1,8 @@
-using System;
-using FishNet.Object;
-using FishNet.Object.Prediction;
-using FishNet.Transporting;
+using PurrNet;
 using UnityEngine;
 
 namespace Runtime.Player
 {
-    [RequireComponent(typeof(Rigidbody))]
     public class PlayerMotor : NetworkBehaviour
     {
         public float maxMoveSpeed;
@@ -26,20 +22,13 @@ namespace Runtime.Player
 
         private new CapsuleCollider collider;
         private float lastJumpTimer;
+        private Vector3 lastPosition;
 
-        public Rigidbody body { get; private set; }
-        public Vector3 headPosition => interpolatedPosition + Vector3.up * cameraPivot + headRotation * Vector3.up * (cameraHeight - cameraPivot);
-        public Vector3 rawHeadPosition => transform.position + Vector3.up * height;
+        public Vector3 velocity { get; set; }
+        public Vector3 headPosition => lerpPosition + Vector3.up * cameraPivot + headRotation * Vector3.up * (cameraHeight - cameraPivot);
+        public Vector3 rawHeadPosition => transform.position + Vector3.up * cameraPivot + headRotation * Vector3.up * (cameraHeight - cameraPivot);
         public Quaternion headRotation => Quaternion.Euler(-rotation.y, rotation.x, 0f);
-        public Vector3 interpolatedPosition
-        {
-            get
-            {
-                var transform = NetworkObject.GetGraphicalObject();
-                if (transform == null) transform = this.transform;
-                return transform.position;
-            }
-        }
+        public Vector3 lerpPosition => Vector3.Lerp(lastPosition, transform.position, (Time.time - Time.fixedTime) / Time.fixedDeltaTime);
         
         // --- Input ---
         public Vector3 moveDirection { get; set; }
@@ -57,89 +46,51 @@ namespace Runtime.Player
 
             collider.height = height - bottomGap;
             collider.radius = radius;
-
-            body = GetComponent<Rigidbody>();
-        }
-
-        public override void OnStartNetwork()
-        {
-            TimeManager.OnTick += OnTick;
-            TimeManager.OnPostTick += OnPostTick;
-        }
-
-        public override void OnStopNetwork()
-        {
-            TimeManager.OnTick -= OnTick;
-            TimeManager.OnPostTick -= OnPostTick;
-        }
-
-        private void OnPostTick()
-        {
-            CreateReconcile();
         }
 
         private void LateUpdate()
         {
-            var rotation = this.rotation;
-            Rotate(ref rotation);
-            this.rotation = rotation;
+            Rotate();
         }
 
-        private void Rotate(ref Vector2 rotation)
+        private void Rotate()
         {
+            var rotation = this.rotation;
+            
             rotation.x %= 360f;
             rotation.y = Mathf.Clamp(rotation.y, -90f, 90f);
 
             transform.rotation = Quaternion.Euler(0f, rotation.x, 0f);
+
+            this.rotation = rotation;
         }
 
-        private void OnTick()
+        private void FixedUpdate()
         {
-            RunInputs(GetInputData());
-        }
-
-        private InputData GetInputData()
-        {
-            if (!IsOwner) return default;
+            lastPosition = transform.position;
             
-            var data = new InputData(this);
-            jump = false;
-            return data;
-        }
-
-        [Replicate]
-        private void RunInputs(InputData input, ReplicateState state = ReplicateState.Invalid, Channel channel = Channel.Unreliable)
-        {
             CheckForGround();
-            Move(input);
-            Jump(input);
-            Rotate(ref input.rotation);
+            Move();
+            Jump();
+            Rotate();
+            Iterate();
+            Collide();
             
-            if (!IsOwner) rotation = input.rotation;
-        }
-
-        public override void CreateReconcile()
-        {
-            var data = new StateData(this);
-            Reconcile(data);
-        }
-
-        [Reconcile]
-        private void Reconcile(StateData data, Channel channel = Channel.Unreliable)
-        {
-            transform.position = data.position;
-            body.linearVelocity = data.velocity;
-            lastJumpTimer = data.lastJumpTimer;
-        }
-
-        private void Jump(InputData input)
-        {
-            if (input.jump && onGround)
+            if (isOwner)
             {
-                body.linearVelocity = new Vector3
+                if (!isServer) SendNetStateServer(GetNetState());
+                else SendNetStateClients(GetNetState());
+            }
+        }
+
+        private void Jump()
+        {
+            if (jump && onGround)
+            {
+                velocity = new Vector3
                 {
-                    x = body.linearVelocity.x,
-                    z = body.linearVelocity.z,
+                    x = velocity.x,
+                    z = velocity.z,
                     y = Mathf.Sqrt(2f * -Physics.gravity.y * jumpHeight)
                 };
                 lastJumpTimer = 0f;
@@ -168,37 +119,58 @@ namespace Runtime.Player
                     y = hit.point.y,
                     z = transform.position.z,
                 };
-                body.linearVelocity = new Vector3()
+                velocity = new Vector3()
                 {
-                    x = body.linearVelocity.x,
-                    y = Mathf.Max(0f, body.linearVelocity.y),
-                    z = body.linearVelocity.z,
+                    x = velocity.x,
+                    y = Mathf.Max(0f, velocity.y),
+                    z = velocity.z,
                 };
                 onGround = true;
             }
         }
 
-        private void Move(InputData input)
+        private void Move()
         {
-            var target = input.moveDirection * maxMoveSpeed;
-            var velocity = body.linearVelocity;
+            moveDirection = Vector3.ClampMagnitude(new Vector3(moveDirection.x, 0f, moveDirection.z), 1f);
+            var target = moveDirection * maxMoveSpeed;
+            var velocity = this.velocity;
 
             var acceleration = maxMoveSpeed * Time.fixedDeltaTime / moveAccelerationTime;
             if (!onGround) acceleration *= 1f - moveAccelerationAirPenalty;
             velocity = Vector3.MoveTowards(velocity, target, acceleration);
 
-            body.linearVelocity = new Vector3()
+            this.velocity = new Vector3()
             {
                 x = velocity.x,
-                y = body.linearVelocity.y,
+                y = this.velocity.y,
                 z = velocity.z,
             };
         }
-
-        protected override void OnValidate()
+        
+        private void Collide()
         {
-            base.OnValidate();
-            
+            var board = Physics.OverlapBox(collider.bounds.center, collider.bounds.extents);
+            foreach (var other in board)
+            {
+                if (other.transform.IsChildOf(transform)) continue;
+                if (other.isTrigger) continue;
+
+                if (Physics.ComputePenetration(collider, collider.transform.position, collider.transform.rotation, other, other.transform.position, other.transform.rotation, out var normal, out var depth))
+                {
+                    transform.position += normal * depth;
+                    velocity += normal * Mathf.Max(0f, Vector3.Dot(normal, -velocity));
+                }
+            }
+        }
+
+        private void Iterate()
+        {
+            transform.position += velocity * Time.deltaTime;
+            velocity += Physics.gravity * Time.deltaTime;
+        }
+
+        private void OnValidate()
+        {
             if (collider != null)
             {
                 collider.height = height;
@@ -206,43 +178,42 @@ namespace Runtime.Player
                 collider.transform.SetLocalPositionAndRotation(Vector3.up * height / 2f, Quaternion.identity);
             }
         }
-
-        public struct InputData : IReplicateData
+        
+        [ServerRpc]
+        private void SendNetStateServer(NetState netState)
         {
-            public Vector3 moveDirection;
-            public bool jump;
-            public Vector2 rotation;
-
-            public InputData(PlayerMotor motor) : this()
-            {
-                moveDirection = motor.moveDirection;
-                jump = motor.jump;
-                rotation = motor.rotation;
-            }
-
-            private uint tick;
-            public uint GetTick() => tick;
-            public void SetTick(uint value) => tick = value;
-            public void Dispose() { }
+            if (!isOwner) ApplyNetState(netState);
+            SendNetStateClients(netState);
         }
 
-        public struct StateData : IReconcileData
+        [ObserversRpc]
+        private void SendNetStateClients(NetState netState)
+        {
+            if (!isOwner) ApplyNetState(netState);
+        }
+        
+        private NetState GetNetState()
+        {
+            return new NetState()
+            {
+                position = transform.position,
+                velocity = velocity,
+                rotation = rotation,
+            };
+        }
+
+        private void ApplyNetState(NetState state)
+        {
+            transform.position = state.position;
+            velocity = state.velocity;
+            rotation = state.rotation;
+        }
+
+        public struct NetState
         {
             public Vector3 position;
             public Vector3 velocity;
-            public float lastJumpTimer;
-
-            public StateData(PlayerMotor motor) : this()
-            {
-                position = motor.transform.position;
-                velocity = motor.body.linearVelocity;
-                lastJumpTimer = motor.lastJumpTimer;
-            }
-
-            private uint tick;
-            public uint GetTick() => tick;
-            public void SetTick(uint value) => tick = value;
-            public void Dispose() { }
+            public Vector2 rotation;
         }
     }
 }

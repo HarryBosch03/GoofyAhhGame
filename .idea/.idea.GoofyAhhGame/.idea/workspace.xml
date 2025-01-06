@@ -12,6 +12,11 @@
   </component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/44f3679c53d1477a9c6e72f269e3a3a91de200/fd/8e6b5760/Object.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.animation.rigging/Runtime/AnimationRig/RigBuilder.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/com.unity.animation.rigging/Runtime/AnimationRig/RigConstraint.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/purrnet/Runtime/CoreModules/RPCs/ObserversRpcAttribute.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/purrnet/Runtime/NetworkIdentity/NetworkIdentity.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Library/PackageCache/purrnet/Runtime/NetworkModule/SyncVar.cs" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 7
@@ -94,6 +99,8 @@
       <workItem from="1735879091647" duration="10630000" />
       <workItem from="1735956646415" duration="11961000" />
       <workItem from="1735987436381" duration="1022000" />
+      <workItem from="1736028304391" duration="8486000" />
+      <workItem from="1736130023273" duration="2536000" />
     </task>
     <servers />
   </component>

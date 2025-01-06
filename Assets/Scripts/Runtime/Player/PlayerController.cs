@@ -1,10 +1,9 @@
 using System;
-using FishNet.Object;
-using Runtime.Player;
+using PurrNet;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace Runtime
+namespace Runtime.Player
 {
     [RequireComponent(typeof(PlayerMotor))]
     [RequireComponent(typeof(PlayerWeaponsManager))]
@@ -17,9 +16,23 @@ namespace Runtime
         public GameObject[] ownerOnly;
         public GameObject[] observerOnly;
 
-        private PlayerMotor motor;
-        private PlayerWeaponsManager weaponsManager;
         private Camera mainCamera;
+
+        public PlayerMotor motor { get; private set; }
+        public PlayerWeaponsManager weaponsManager { get; private set; }
+
+        public bool isActiveViewer => activeViewer == this;
+        public static PlayerController activeViewer { get; private set; }
+
+        public static void SetActiveViewer(PlayerController activeViewer)
+        {
+            var prev = PlayerController.activeViewer;
+            if (prev == activeViewer) return;
+            PlayerController.activeViewer = activeViewer;
+
+            if (prev != null) prev.OnActiveViewerChanged();
+            if (activeViewer != null) activeViewer.OnActiveViewerChanged();
+        }
 
         private void Awake()
         {
@@ -28,31 +41,29 @@ namespace Runtime
             mainCamera = Camera.main;
         }
 
-        public override void OnStartNetwork()
+        private void OnActiveViewerChanged()
         {
-            var isOwner = Owner == LocalConnection;
-            
+            foreach (var e in ownerOnly) e.SetActive(isActiveViewer);
+            foreach (var e in observerOnly) e.SetActive(!isActiveViewer);
+        }
+
+        protected override void OnSpawned()
+        {
             if (isOwner)
             {
                 Cursor.lockState = CursorLockMode.Locked;
+                SetActiveViewer(this);
             }
-
-            foreach (var e in ownerOnly) e.SetActive(isOwner);
-            foreach (var e in observerOnly) e.SetActive(!isOwner);
         }
 
-
-        public override void OnStopNetwork()
+        protected override void OnDespawned()
         {
-            if (IsOwner)
-            {
-                Cursor.lockState = CursorLockMode.None;
-            }
+            if (isOwner) Cursor.lockState = CursorLockMode.None;
         }
 
         private void Update()
         {
-            if (IsOwner)
+            if (isOwner)
             {
                 var kb = Keyboard.current;
                 var m = Mouse.current;
@@ -65,17 +76,17 @@ namespace Runtime
 
                 if (m.leftButton.wasPressedThisFrame) weaponsManager.shoot = true;
                 if (m.leftButton.wasReleasedThisFrame) weaponsManager.shoot = false;
-                
+
                 if (m.rightButton.wasPressedThisFrame) weaponsManager.aim = true;
                 if (m.rightButton.wasReleasedThisFrame) weaponsManager.aim = false;
-                
+
                 if (kb.rKey.wasPressedThisFrame) weaponsManager.reload = true;
             }
         }
 
         private void LateUpdate()
         {
-            if (IsOwner)
+            if (isActiveViewer)
             {
                 mainCamera.transform.position = motor.headPosition;
                 mainCamera.transform.rotation = motor.headRotation;

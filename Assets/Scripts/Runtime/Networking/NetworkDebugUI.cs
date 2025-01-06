@@ -1,9 +1,8 @@
-using System;
-using FishNet.Managing;
+using PurrNet;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace Runtime
+namespace Runtime.Networking
 {
     public class NetworkDebugUI : MonoBehaviour
     {
@@ -14,7 +13,7 @@ namespace Runtime
         private void Update()
         {
             var kb = Keyboard.current;
-            if (!netManager.IsServer && !netManager.IsClient)
+            if (!netManager.isServer && !netManager.isClient)
             {
                 if (kb.spaceKey.wasPressedThisFrame || kb.hKey.wasPressedThisFrame) StartHost();
                 if (kb.cKey.wasPressedThisFrame) StartClient();
@@ -23,18 +22,18 @@ namespace Runtime
 
         private void StartHost()
         {
-            netManager.ServerManager.StartConnection();
-            netManager.ClientManager.StartConnection("127.0.0.1");
+            netManager.StartServer();
+            netManager.StartClient();
         }
 
         private void StartClient()
         {
-            netManager.ClientManager.StartConnection();
+            netManager.StartClient();
         }
 
         private void OnGUI()
         {
-            if (!netManager.IsServer && !netManager.IsClient)
+            if (!netManager.isServer && !netManager.isClient)
             {
                 using (new GUILayout.AreaScope(new Rect(20, 20, 200, Screen.height - 40f)))
                 {

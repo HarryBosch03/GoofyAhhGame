@@ -1,7 +1,6 @@
-using System;
 using UnityEngine;
 
-namespace Runtime
+namespace Runtime.Rendering
 {
     [RequireComponent(typeof(Camera))]
     public class MainCamera : MonoBehaviour
