@@ -1,6 +1,8 @@
 using System;
-using PurrNet;
+using System.Collections;
+using Runtime.Damage;
 using Runtime.Player;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace Runtime.Weapons
@@ -8,12 +10,14 @@ namespace Runtime.Weapons
     public class SimpleProjectileWeapon : NetworkBehaviour
     {
         public Projectile projectilePrefab;
+        public DamageInstance damage;
         public float projectileSpeed;
 
         [Space]
         public float fireRate;
         public bool automatic;
         public int magazineSize;
+        public float reloadDuration = 1.2f;
 
         [Space]
         public Transform visualMuzzle;
@@ -23,12 +27,15 @@ namespace Runtime.Weapons
         [Space]
         public Transform leftHandIkTarget;
         public Transform rightHandIkTarget;
+        
         private int currentMagazine;
         public PlayerController player { get; private set; }
-        
+
         public bool shoot { get; set; }
         public bool aim { get; set; }
         public bool reload { get; set; }
+        public bool isReloading { get; set; }
+        public float reloadPercent { get; set; }
         public float cycleTimer { get; private set; }
 
         public event Action ShootEvent;
@@ -49,26 +56,79 @@ namespace Runtime.Weapons
             main.stopAction = ParticleSystemStopAction.None;
         }
 
-        private void FixedUpdate()
+        private void OnEnable()
         {
-            if (shoot && cycleTimer <= 0f)
+            if (IsOwner && isReloading)
             {
-                Shoot(player.motor.headPosition + player.motor.headRotation * Vector3.forward * player.motor.radius * 1.5f, player.motor.headRotation);
-
-                cycleTimer = 60f / fireRate;
+                isReloading = false;
+                StartCoroutine(Reload());
             }
-
-            cycleTimer -= Time.fixedDeltaTime;
         }
 
-        [ObserversRpc(runLocally:true)]
-        private void Shoot(Vector3 position, Quaternion orientation)
+        private void FixedUpdate()
+        {
+            if (IsOwner)
+            {
+                if (shoot && cycleTimer <= 0f)
+                {
+                    if (currentMagazine > 0)
+                    {
+                        ShootRpc(player.motor.headPosition + player.motor.headRotation * Vector3.forward * player.motor.radius * 1.5f, player.motor.headRotation);
+                        cycleTimer = 60f / fireRate;
+                    }
+                    else
+                    {
+                        ReloadRpc();
+                    }
+
+                    if (!automatic) shoot = false;
+                }
+
+                if (reload && currentMagazine < magazineSize)
+                {
+                    ReloadRpc();
+                }
+
+                cycleTimer -= Time.fixedDeltaTime;
+            }
+        }
+
+        [Rpc(SendTo.Everyone)]
+        private void ReloadRpc()
+        {
+            StartCoroutine(Reload());
+        }
+        
+        private IEnumerator Reload()
+        {
+            if (isReloading) yield break;
+            isReloading = true;
+            currentMagazine = 0;
+            reload = false;
+
+            reloadPercent = 0f;
+            while (reloadPercent < 1f)
+            {
+                reloadPercent += Time.deltaTime / reloadDuration;
+                yield return null;
+            }
+            reloadPercent = 0f;
+            
+            currentMagazine = magazineSize;
+            isReloading = false;
+        }
+
+        [Rpc(SendTo.Everyone)]
+        private void ShootRpc(Vector3 position, Quaternion orientation)
         {
             var projectile = Instantiate(projectilePrefab, position, orientation);
+            projectile.damage = damage;
             projectile.velocity = player.motor.velocity + orientation * Vector3.forward * projectileSpeed;
             if (visualMuzzle != null) projectile.interpolatePosition = visualMuzzle.position;
             projectile.HitEvent += OnProjectileHit;
             if (flashFX != null) flashFX.Play();
+
+            currentMagazine--;
 
             ShootEvent?.Invoke();
         }

@@ -1,5 +1,5 @@
 using System;
-using PurrNet;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace Runtime.Damage
@@ -8,42 +8,48 @@ namespace Runtime.Damage
     {
         public int maxHealth;
         public int currentHealth;
-
+        
         public bool isDead { get; private set; }
         
         private void Awake() { currentHealth = maxHealth; }
 
-        protected override void OnSpawned()
+        public override void OnNetworkSpawn()
         {
-            if (isServer)
+            if (IsServer)
             {
-                SetHealth(currentHealth);
+                SetHealthRpc(currentHealth);
             }
         }
 
-        [ObserversRpc(requireServer: true, runLocally: true)]
-        private void SetHealth(int currentHealth) { this.currentHealth = currentHealth; }
+        [Rpc(SendTo.Everyone)]
+        private void SetHealthRpc(int currentHealth) { this.currentHealth = currentHealth; }
 
         public void Damage(DamageInstance damage, DamageSource source)
         {
+            if (!IsServer) return;
+            
             currentHealth -= damage.damage;
             if (currentHealth <= 0) SetIsDead(true);
             
-            NotifyDamage(damage, source, currentHealth, isDead);
+            NotifyDamageRpc(damage, source, currentHealth, isDead);
         }
 
-        [ObserversRpc(requireServer: true, runLocally: true)]
-        private void NotifyDamage(DamageInstance damage, DamageSource source, int currentHealth, bool isDead)
+        [Rpc(SendTo.Everyone)]
+        private void NotifyDamageRpc(DamageInstance damage, DamageSource source, int currentHealth, bool isDead)
         {
             this.currentHealth = currentHealth;
             if (isDead != this.isDead) SetIsDead(isDead);
         }
 
-        private void SetIsDead(bool isDead) { gameObject.SetActive(false); }
+        private void SetIsDead(bool isDead)
+        {
+            this.isDead = isDead;
+            gameObject.SetActive(!isDead);
+        }
 
         private void OnGUI()
         {
-            if (isOwner)
+            if (IsOwner)
             {
                 GUI.Label(new Rect(20, 20, 200, 20), $"Health: {currentHealth}/{maxHealth}");
             }

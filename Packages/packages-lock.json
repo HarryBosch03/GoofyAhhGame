@@ -127,6 +127,16 @@
       },
       "url": "https://packages.unity.com"
     },
+    "com.unity.netcode.gameobjects": {
+      "version": "2.1.1",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.transport": "2.3.0",
+        "com.unity.nuget.mono-cecil": "1.11.4"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.nuget.mono-cecil": {
       "version": "1.11.4",
       "depth": 1,
@@ -259,16 +269,6 @@
         "com.unity.modules.ui": "1.0.0",
         "com.unity.modules.imgui": "1.0.0"
       }
-    },
-    "purrnet": {
-      "version": "https://github.com/BlenMiner/PurrNet.git?path=/Assets/PurrNet#release",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {
-        "com.unity.nuget.mono-cecil": "1.11.4",
-        "com.unity.nuget.newtonsoft-json": "3.2.1"
-      },
-      "hash": "2201cdcabda58599057a2a28359dfc4815d6a02d"
     },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",

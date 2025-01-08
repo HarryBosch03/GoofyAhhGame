@@ -1,15 +1,17 @@
 using System;
+using Runtime.Damage;
 using UnityEngine;
 
 namespace Runtime.Weapons
 {
     public class Projectile : MonoBehaviour
     {
+        public DamageInstance damage;
         public float gravityScale = 1f;
         public float maxDistance = 100f;
         public float lerpDistance = 0.1f;
         public TrailRenderer trail;
-        
+
         [HideInInspector]
         public Vector3 position;
         [HideInInspector]
@@ -23,10 +25,7 @@ namespace Runtime.Weapons
 
         public event Action<Projectile, RaycastHit> HitEvent;
 
-        private void Awake()
-        {
-            position = transform.position;
-        }
+        private void Awake() { position = transform.position; }
 
         private void Start()
         {
@@ -39,12 +38,19 @@ namespace Runtime.Weapons
             var ray = new Ray(position, velocity);
             if (Physics.Raycast(ray, out var hit, velocity.magnitude * Time.fixedDeltaTime * 1.02f))
             {
+                var damageable = hit.collider.GetComponentInParent<HealthController>();
+                if (damageable != null)
+                {
+                    damageable.Damage(damage, new DamageSource(ray.direction, hit));
+                }
+
                 HitEvent?.Invoke(this, hit);
                 if (trail != null)
                 {
                     trail.transform.SetParent(null);
                     Destroy(trail.gameObject, trail.time + 1f);
                 }
+
                 Destroy(gameObject);
             }
 

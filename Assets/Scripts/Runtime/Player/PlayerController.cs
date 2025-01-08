@@ -1,5 +1,5 @@
 using System;
-using PurrNet;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -13,8 +13,8 @@ namespace Runtime.Player
 
         [Space]
         public Transform head;
-        public GameObject[] ownerOnly;
-        public GameObject[] observerOnly;
+        public GameObject[] firstPersonOnly;
+        public GameObject[] thirdPersonOnly;
 
         private Camera mainCamera;
 
@@ -43,27 +43,27 @@ namespace Runtime.Player
 
         private void OnActiveViewerChanged()
         {
-            foreach (var e in ownerOnly) e.SetActive(isActiveViewer);
-            foreach (var e in observerOnly) e.SetActive(!isActiveViewer);
+            foreach (var e in firstPersonOnly) e.SetActive(isActiveViewer);
+            foreach (var e in thirdPersonOnly) e.SetActive(!isActiveViewer);
         }
 
-        protected override void OnSpawned()
+        public override void OnNetworkSpawn()
         {
-            if (isOwner)
+            if (IsOwner)
             {
                 Cursor.lockState = CursorLockMode.Locked;
                 SetActiveViewer(this);
             }
         }
 
-        protected override void OnDespawned()
+        public override void OnNetworkDespawn()
         {
-            if (isOwner) Cursor.lockState = CursorLockMode.None;
+            if (IsOwner) Cursor.lockState = CursorLockMode.None;
         }
 
         private void Update()
         {
-            if (isOwner)
+            if (IsOwner)
             {
                 var kb = Keyboard.current;
                 var m = Mouse.current;
@@ -81,6 +81,7 @@ namespace Runtime.Player
                 if (m.rightButton.wasReleasedThisFrame) weaponsManager.aim = false;
 
                 if (kb.rKey.wasPressedThisFrame) weaponsManager.reload = true;
+                if (kb.rKey.wasReleasedThisFrame) weaponsManager.reload = false;
             }
         }
 

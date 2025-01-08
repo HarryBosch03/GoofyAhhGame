@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -25,6 +26,11 @@ namespace Runtime.Weapons
         public float recoilDamping;
         public float recoilSwing;
 
+        [Space]
+        public Vector3 reloadOffset;
+        public float reloadAnimationDuration;
+        public AnimationCurve reloadAnimationCurve;
+        
         private SimpleProjectileWeapon weapon;
         private Vector2 lastRotation;
         private Vector2 smoothedDelta;
@@ -93,6 +99,19 @@ namespace Runtime.Weapons
             if (!weapon.player.isActiveViewer)
             {
                 transform.position = weapon.player.transform.position + Vector3.up * weapon.player.motor.cameraHeight + weapon.player.transform.rotation * (thirdPersonPosition - thirdPersonPivotOffset) + weapon.player.motor.headRotation * thirdPersonPivotOffset;
+            }
+
+            if (weapon.isReloading)
+            {
+                var t0 = 0f;
+                var duration = weapon.reloadDuration;
+                var reloadTime = weapon.reloadPercent * duration;
+                if (duration - reloadTime < reloadAnimationDuration) t0 = Mathf.Clamp01((duration - reloadTime) / reloadAnimationDuration);
+                else t0 = Mathf.Clamp01(reloadTime / reloadAnimationDuration);
+
+                var t1 = reloadAnimationCurve.Evaluate(t0);
+                transform.localPosition += reloadOffset * t1;
+                transform.localRotation *= Quaternion.Euler(15f * t1, 0f, 0f);
             }
         }
     }

@@ -1,4 +1,4 @@
-using PurrNet;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -13,7 +13,7 @@ namespace Runtime.Networking
         private void Update()
         {
             var kb = Keyboard.current;
-            if (!netManager.isServer && !netManager.isClient)
+            if (!netManager.IsServer && !netManager.IsClient)
             {
                 if (kb.spaceKey.wasPressedThisFrame || kb.hKey.wasPressedThisFrame) StartHost();
                 if (kb.cKey.wasPressedThisFrame) StartClient();
@@ -22,8 +22,7 @@ namespace Runtime.Networking
 
         private void StartHost()
         {
-            netManager.StartServer();
-            netManager.StartClient();
+            netManager.StartHost();
         }
 
         private void StartClient()
@@ -33,7 +32,7 @@ namespace Runtime.Networking
 
         private void OnGUI()
         {
-            if (!netManager.isServer && !netManager.isClient)
+            if (!netManager.IsServer && !netManager.IsClient)
             {
                 using (new GUILayout.AreaScope(new Rect(20, 20, 200, Screen.height - 40f)))
                 {

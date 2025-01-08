@@ -1,4 +1,4 @@
-using PurrNet;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace Runtime.Player
@@ -76,10 +76,10 @@ namespace Runtime.Player
             Iterate();
             Collide();
             
-            if (isOwner)
+            if (IsOwner)
             {
-                if (!isServer) SendNetStateServer(GetNetState());
-                else SendNetStateClients(GetNetState());
+                if (!IsServer) SendNetStateServerRpc(GetNetState());
+                else SendNetStateRpc(GetNetState());
             }
         }
 
@@ -180,16 +180,16 @@ namespace Runtime.Player
         }
         
         [ServerRpc]
-        private void SendNetStateServer(NetState netState)
+        private void SendNetStateServerRpc(NetState netState)
         {
-            if (!isOwner) ApplyNetState(netState);
-            SendNetStateClients(netState);
+            if (!IsOwner) ApplyNetState(netState);
+            SendNetStateRpc(netState);
         }
 
-        [ObserversRpc]
-        private void SendNetStateClients(NetState netState)
+        [Rpc(SendTo.Everyone)]
+        private void SendNetStateRpc(NetState netState)
         {
-            if (!isOwner) ApplyNetState(netState);
+            if (!IsOwner) ApplyNetState(netState);
         }
         
         private NetState GetNetState()
@@ -209,7 +209,7 @@ namespace Runtime.Player
             rotation = state.rotation;
         }
 
-        public struct NetState
+        public struct NetState : INetworkSerializeByMemcpy
         {
             public Vector3 position;
             public Vector3 velocity;
