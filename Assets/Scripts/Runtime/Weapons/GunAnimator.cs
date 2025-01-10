@@ -98,7 +98,7 @@ namespace Runtime.Weapons
                 
             if (!weapon.player.isActiveViewer)
             {
-                transform.position = weapon.player.transform.position + Vector3.up * weapon.player.motor.cameraHeight + weapon.player.transform.rotation * (thirdPersonPosition - thirdPersonPivotOffset) + weapon.player.motor.headRotation * thirdPersonPivotOffset;
+                transform.position = weapon.player.motor.transform.position + Vector3.up * weapon.player.motor.cameraHeight + weapon.player.motor.transform.rotation * (thirdPersonPosition - thirdPersonPivotOffset) + weapon.player.motor.headRotation * thirdPersonPivotOffset;
             }
 
             if (weapon.isReloading)

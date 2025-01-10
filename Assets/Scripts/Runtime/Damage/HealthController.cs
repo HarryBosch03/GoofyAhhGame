@@ -10,6 +10,9 @@ namespace Runtime.Damage
         public int currentHealth;
         
         public bool isDead { get; private set; }
+
+        public event Action DiedEvent;
+        public event Action RespawnedEvent;
         
         private void Awake() { currentHealth = maxHealth; }
 
@@ -17,12 +20,28 @@ namespace Runtime.Damage
         {
             if (IsServer)
             {
-                SetHealthRpc(currentHealth);
+                RespawnRpc();
             }
         }
 
+        public void RequestRespawn()
+        {
+            RequestRespawnServerRpc();
+        }
+
+        [ServerRpc]
+        private void RequestRespawnServerRpc()
+        {
+            if (!isDead) return;
+            RespawnRpc();
+        }
+
         [Rpc(SendTo.Everyone)]
-        private void SetHealthRpc(int currentHealth) { this.currentHealth = currentHealth; }
+        private void RespawnRpc()
+        {
+            SetIsDead(false);
+            currentHealth = maxHealth;
+        }
 
         public void Damage(DamageInstance damage, DamageSource source)
         {
@@ -45,6 +64,9 @@ namespace Runtime.Damage
         {
             this.isDead = isDead;
             gameObject.SetActive(!isDead);
+            
+            if (isDead) DiedEvent?.Invoke();
+            else RespawnedEvent?.Invoke();
         }
 
         private void OnGUI()
