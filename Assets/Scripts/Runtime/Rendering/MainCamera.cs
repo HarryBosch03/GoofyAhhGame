@@ -5,8 +5,8 @@ namespace Runtime.Rendering
     [RequireComponent(typeof(Camera))]
     public class MainCamera : MonoBehaviour
     {
-        private new Camera mainCamera;
-        private new Camera viewportCamera;
+        private Camera mainCamera;
+        private Camera viewportCamera;
 
         private void Awake()
         {

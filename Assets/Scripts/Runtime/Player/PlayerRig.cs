@@ -12,7 +12,7 @@ namespace Runtime.Player
 
         private PlayerController player;
         private RigBuilder rigBuilder;
-        private SimpleProjectileWeapon currentWeapon;
+        private Weapon currentWeapon;
 
         private void Awake()
         {

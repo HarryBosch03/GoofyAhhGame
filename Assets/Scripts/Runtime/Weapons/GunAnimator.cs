@@ -6,6 +6,9 @@ namespace Runtime.Weapons
 {
     public class GunAnimator : MonoBehaviour
     {
+        public Transform target;
+        
+        [Space]
         public Vector3 viewportPosition = new Vector3(0.33f, -0.19f, 0.64f);
         public Vector3 viewportRotation = new Vector3(0f, 0f, 6f);
         public Vector3 thirdPersonPosition;
@@ -44,6 +47,7 @@ namespace Runtime.Weapons
         private void Awake()
         {
             weapon = GetComponentInParent<SimpleProjectileWeapon>();
+            if (target == null) target = transform;
         }
 
         private void OnEnable()
@@ -78,11 +82,11 @@ namespace Runtime.Weapons
             } / Time.deltaTime;
             smoothedDelta = Vector2.Lerp(smoothedDelta, delta, Time.deltaTime / Mathf.Max(Time.deltaTime, smoothing));
 
-            transform.position = weapon.player.motor.headPosition + (weapon.player.motor.headRotation * Quaternion.Euler(new Vector3(-smoothedDelta.y, smoothedDelta.x, 0f) * translationSway)) * viewportPosition;
-            transform.rotation = weapon.player.motor.headRotation * Quaternion.Euler(new Vector3(-smoothedDelta.y, smoothedDelta.x, 0f) * rotationSway) * Quaternion.Euler(viewportRotation);
+            target.position = weapon.player.motor.headPosition + (weapon.player.motor.headRotation * Quaternion.Euler(new Vector3(-smoothedDelta.y, smoothedDelta.x, 0f) * translationSway)) * viewportPosition;
+            target.rotation = weapon.player.motor.headRotation * Quaternion.Euler(new Vector3(-smoothedDelta.y, smoothedDelta.x, 0f) * rotationSway) * Quaternion.Euler(viewportRotation);
 
-            transform.localPosition += recoilPosition;
-            transform.localRotation *= Quaternion.Euler(new Vector3(recoilVelocity.z, -recoilVelocity.x, 0f) * recoilSwing);
+            target.localPosition += recoilPosition;
+            target.localRotation *= Quaternion.Euler(new Vector3(recoilVelocity.z, -recoilVelocity.x, 0f) * recoilSwing);
             
             var recoilForce = -recoilPosition * recoilSpring - recoilVelocity * recoilDamping;
             recoilPosition += recoilVelocity * Time.deltaTime;
@@ -94,11 +98,11 @@ namespace Runtime.Weapons
             speed = weapon.player.motor.onGround ? new Vector2(weapon.player.motor.velocity.x, weapon.player.motor.velocity.z).magnitude : 0f;
             distance += speed * Time.deltaTime;
             
-            transform.localPosition += new Vector3(Mathf.Cos(distance * Mathf.PI * moveSwayFrequency), -Mathf.Abs(Mathf.Sin(distance * Mathf.PI * moveSwayFrequency))) * moveSwayAmplitude * speed / weapon.player.motor.maxMoveSpeed;
+            target.localPosition += new Vector3(Mathf.Cos(distance * Mathf.PI * moveSwayFrequency), -Mathf.Abs(Mathf.Sin(distance * Mathf.PI * moveSwayFrequency))) * moveSwayAmplitude * speed / weapon.player.motor.maxMoveSpeed;
                 
             if (!weapon.player.isActiveViewer)
             {
-                transform.position = weapon.player.motor.transform.position + Vector3.up * weapon.player.motor.cameraHeight + weapon.player.motor.transform.rotation * (thirdPersonPosition - thirdPersonPivotOffset) + weapon.player.motor.headRotation * thirdPersonPivotOffset;
+                target.position = weapon.player.motor.transform.position + Vector3.up * weapon.player.motor.cameraHeight + weapon.player.motor.transform.rotation * (thirdPersonPosition - thirdPersonPivotOffset) + weapon.player.motor.headRotation * thirdPersonPivotOffset;
             }
 
             if (weapon.isReloading)
@@ -110,8 +114,8 @@ namespace Runtime.Weapons
                 else t0 = Mathf.Clamp01(reloadTime / reloadAnimationDuration);
 
                 var t1 = reloadAnimationCurve.Evaluate(t0);
-                transform.localPosition += reloadOffset * t1;
-                transform.localRotation *= Quaternion.Euler(15f * t1, 0f, 0f);
+                target.localPosition += reloadOffset * t1;
+                target.localRotation *= Quaternion.Euler(15f * t1, 0f, 0f);
             }
         }
     }

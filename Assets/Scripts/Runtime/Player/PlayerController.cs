@@ -124,17 +124,20 @@ namespace Runtime.Player
                 if (kb.spaceKey.wasPressedThisFrame) motor.jump = true;
                 if (kb.spaceKey.wasReleasedThisFrame) motor.jump = false;
 
-                if (m.leftButton.wasPressedThisFrame) weaponsManager.shoot = true;
-                if (m.leftButton.wasReleasedThisFrame) weaponsManager.shoot = false;
+                if (m.leftButton.wasPressedThisFrame) weaponsManager.SetShoot(true);
+                if (m.leftButton.wasReleasedThisFrame) weaponsManager.SetShoot(false);
 
-                if (m.rightButton.wasPressedThisFrame) weaponsManager.aim = true;
-                if (m.rightButton.wasReleasedThisFrame) weaponsManager.aim = false;
+                if (m.rightButton.wasPressedThisFrame) weaponsManager.SetAim(true);
+                if (m.rightButton.wasReleasedThisFrame) weaponsManager.SetAim(false);
 
-                if (kb.rKey.wasPressedThisFrame) weaponsManager.reload = true;
-                if (kb.rKey.wasReleasedThisFrame) weaponsManager.reload = false;
+                if (kb.rKey.wasPressedThisFrame) weaponsManager.SetReload(true);
+                if (kb.rKey.wasReleasedThisFrame) weaponsManager.SetReload(false);
                 
                 if (kb.leftCtrlKey.wasPressedThisFrame) motor.crouching = true;
                 if (kb.leftCtrlKey.wasReleasedThisFrame) motor.crouching = false;
+
+                if (kb.digit1Key.wasPressedThisFrame) weaponsManager.SwitchToWeaponSlotRpc(0);
+                if (kb.digit2Key.wasPressedThisFrame) weaponsManager.SwitchToWeaponSlotRpc(1);
 
                 var ray = new Ray(motor.headPosition, motor.headRotation * Vector3.forward);
                 if (Physics.Raycast(ray, out var hit, interactMaxRange))

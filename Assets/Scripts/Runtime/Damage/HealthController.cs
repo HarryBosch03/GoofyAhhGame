@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Runtime.Damage
 {
-    public class HealthController : NetworkBehaviour
+    public class HealthController : NetworkBehaviour, ICanBeDamaged
     {
         public int maxHealth;
         public int currentHealth;

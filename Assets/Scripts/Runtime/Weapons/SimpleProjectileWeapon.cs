@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Runtime.Weapons
 {
-    public class SimpleProjectileWeapon : NetworkBehaviour
+    public class SimpleProjectileWeapon : Weapon
     {
         public Projectile projectilePrefab;
         public DamageInstance damage;
@@ -23,17 +23,10 @@ namespace Runtime.Weapons
         public Transform visualMuzzle;
         public ParticleSystem flashFX;
         public ParticleSystem hitFX;
-
-        [Space]
-        public Transform leftHandIkTarget;
-        public Transform rightHandIkTarget;
         
         private int currentMagazine;
         public PlayerController player { get; private set; }
 
-        public bool shoot { get; set; }
-        public bool aim { get; set; }
-        public bool reload { get; set; }
         public bool isReloading { get; set; }
         public float reloadPercent { get; set; }
         public float cycleTimer { get; private set; }

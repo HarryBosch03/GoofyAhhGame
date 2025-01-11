@@ -38,7 +38,7 @@ namespace Runtime.Weapons
             var ray = new Ray(position, velocity);
             if (Physics.Raycast(ray, out var hit, velocity.magnitude * Time.fixedDeltaTime * 1.02f))
             {
-                var damageable = hit.collider.GetComponentInParent<HealthController>();
+                var damageable = hit.collider.GetComponentInParent<ICanBeDamaged>();
                 if (damageable != null)
                 {
                     damageable.Damage(damage, new DamageSource(ray.direction, hit));
