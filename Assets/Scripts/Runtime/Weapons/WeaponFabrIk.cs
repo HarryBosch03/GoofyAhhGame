@@ -40,6 +40,13 @@ namespace Runtime.Weapons
                     var rootPos = root.position;
                     var tipPos = target.position;
                     var midPos = GetMidPosition(rootPos, tipPos);
+
+                    root.position = rootPos;
+                    root.rotation = Quaternion.LookRotation(rootPos - midPos);
+                    mid.position = midPos;
+                    mid.rotation = Quaternion.LookRotation(midPos - tipPos);
+                    tip.position = tipPos;
+                    tip.rotation = target.rotation;
                 }
             }
         }
@@ -47,7 +54,14 @@ namespace Runtime.Weapons
         private Vector3 GetMidPosition(Vector3 rootPos, Vector3 tipPos)
         {
             var midPos = hint.transform.position;
-            
+
+            for (var i = 0; i < 16; i++)
+            {
+                midPos += (rootPos - midPos).normalized * rootMidLength;
+                midPos += (tipPos - midPos).normalized * midTipLength;
+            }
+
+            return midPos;
         }
 
         private void ResetPose()
