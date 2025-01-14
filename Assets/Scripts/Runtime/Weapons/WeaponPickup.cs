@@ -8,7 +8,7 @@ namespace Runtime.Weapons
 {
     public class WeaponPickup : NetworkBehaviour, ICanInteract
     {
-        public Weapon defaultWeapon;
+        public Weapon weapon;
 
         [Space]
         public float hoverHeight;
@@ -16,38 +16,26 @@ namespace Runtime.Weapons
         public float bobFrequency;
         public float rotationSpeed;
         
-        private string weaponId;
-        private GameObject modelInstance;
         private string displayName;
 
-        [Rpc(SendTo.Everyone)]
-        public void ChangeWeaponRpc(string weaponId)
+        public void ChangeWeaponRpc(Weapon weapon)
         {
-            if (modelInstance != null) Destroy(modelInstance);
-
-            var all = Resources.LoadAll("Weapons");
-            var weapon = Resources.Load<GameObject>($"Weapons/{weaponId}").GetComponent<Weapon>();
-            
-            modelInstance = Instantiate(weapon.model, transform);
-            displayName = weapon.name;
-            name = $"Weapon Pickup - {displayName}";
-            this.weaponId = weaponId;
+            weapon.transform.SetParent(transform);
+            weapon.gameObject.SetActive(true);
+            weapon.enabled = false;
         }
 
-        public override void OnNetworkSpawn()
+        private void Awake()
         {
-            if (IsServer)
-            {
-                ChangeWeaponRpc(defaultWeapon.id);
-            }
+            ChangeWeaponRpc(weapon);
         }
 
         private void Update()
         {
-            if (modelInstance != null)
+            if (weapon != null)
             {
-                modelInstance.transform.localPosition = Vector3.up * (hoverHeight + Mathf.Sin(Time.time * Mathf.PI * bobFrequency) * bobAmplitude);
-                modelInstance.transform.localRotation = Quaternion.Euler(-45f, Time.time * rotationSpeed, 0f);;
+                weapon.model.transform.localPosition = Vector3.up * (hoverHeight + Mathf.Sin(Time.time * Mathf.PI * bobFrequency) * bobAmplitude);
+                weapon.model.transform.localRotation = Quaternion.Euler(-45f, Time.time * rotationSpeed, 0f);;
             }
         }
 
@@ -55,14 +43,7 @@ namespace Runtime.Weapons
 
         public void Interact(PlayerController player)
         {
-            player.weaponsManager.PickupWeaponServerRpc(weaponId);
-            if (IsServer) SetActiveRpc(false);
-        }
-
-        [Rpc(SendTo.Everyone)]
-        private void SetActiveRpc(bool enabled)
-        {
-            gameObject.SetActive(enabled);
+            player.weaponsManager.PickupWeaponServerRpc(this);
         }
     }
 }

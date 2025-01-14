@@ -35,8 +35,6 @@ namespace Runtime.Weapons
 
         private void Awake()
         {
-            player = GetComponentInParent<PlayerController>();
-
             var main = flashFX.main;
             main.loop = false;
             main.simulationSpace = ParticleSystemSimulationSpace.Custom;
@@ -51,6 +49,8 @@ namespace Runtime.Weapons
 
         private void OnEnable()
         {
+            player = GetComponentInParent<PlayerController>();
+            
             if (IsOwner && isReloading)
             {
                 isReloading = false;

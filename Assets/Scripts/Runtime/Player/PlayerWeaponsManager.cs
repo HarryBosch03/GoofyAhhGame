@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Runtime.Weapons;
 using Unity.Netcode;
 using UnityEngine;
@@ -7,20 +6,9 @@ namespace Runtime.Player
 {
     public class PlayerWeaponsManager : NetworkBehaviour
     {
-        public Transform weaponRoot;
+        public Transform weaponParent;
         public Weapon currentWeapon;
         public Weapon[] weaponSlots = new Weapon[2];
-
-        public readonly List<Weapon> allWeapons = new List<Weapon>();
-
-        public override void OnNetworkSpawn()
-        {
-            allWeapons.AddRange(GetComponentsInChildren<Weapon>());
-            for (var i = 0; i < allWeapons.Count; i++)
-            {
-                allWeapons[i].gameObject.SetActive(false);
-            }
-        }
 
         [Rpc(SendTo.Everyone)]
         public void SwitchToWeaponSlotRpc(int index)
@@ -31,7 +19,7 @@ namespace Runtime.Player
         }
         
         [ServerRpc]
-        public void PickupWeaponServerRpc(string weaponId)
+        public void PickupWeaponServerRpc(WeaponPickup pickup)
         {
             var slotIndex = GetCurrentWeaponSlot();
 
@@ -44,25 +32,21 @@ namespace Runtime.Player
                     break;
                 }
             }
-            
-            DropWeaponRpc(slotIndex);
-            SetWeaponInSlotRpc(slotIndex, weaponId);
-            SwitchToWeaponSlotRpc(slotIndex);
+
+            var oldWeapon = weaponSlots[slotIndex];
+            var newWeapon = pickup.weapon;
+
+            SetWeaponInSlotRpc(slotIndex, newWeapon);
+            pickup.ChangeWeaponRpc(oldWeapon);
+
         }
 
         [Rpc(SendTo.Everyone)]
-        private void SetWeaponInSlotRpc(int slotIndex, string weaponId)
+        private void SetWeaponInSlotRpc(int slotIndex, Weapon weapon)
         {
-            weaponSlots[slotIndex] = GetWeaponById(weaponId);
-        }
-
-        private Weapon GetWeaponById(string weaponId)
-        {
-            for (var i = 0; i < allWeapons.Count; i++)
-            {
-                if (allWeapons[i].id == weaponId) return allWeapons[i];
-            }
-            return null;
+            weaponSlots[slotIndex] = weapon;
+            weapon.transform.SetParent(weaponParent);
+            weapon.enabled = true;
         }
 
         [Rpc(SendTo.Everyone)]

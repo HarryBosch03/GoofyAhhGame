@@ -73,6 +73,8 @@ namespace Runtime.Weapons
 
         private void LateUpdate()
         {
+            if (weapon.player == null || !weapon.isActiveAndEnabled) return;
+            
             gameObject.layer = weapon.player.isActiveViewer ? 3 : 0;
             var parentRotation = new Vector2(weapon.player.motor.headRotation.eulerAngles.y, -weapon.player.motor.headRotation.eulerAngles.x);
             var delta = new Vector2()
@@ -93,8 +95,7 @@ namespace Runtime.Weapons
             recoilVelocity += recoilForce * Time.deltaTime;
             
             lastRotation = parentRotation;
-
-
+            
             speed = weapon.player.motor.onGround ? new Vector2(weapon.player.motor.velocity.x, weapon.player.motor.velocity.z).magnitude : 0f;
             distance += speed * Time.deltaTime;
             
