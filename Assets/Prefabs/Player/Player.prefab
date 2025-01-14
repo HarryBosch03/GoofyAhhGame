@@ -758,7 +758,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
-  weaponRoot: {fileID: 0}
+  weaponParent: {fileID: 6459069579844708665}
   currentWeapon: {fileID: 0}
   weaponSlots:
   - {fileID: 0}

@@ -1,3 +1,4 @@
+using System;
 using Runtime.Weapons;
 using Unity.Netcode;
 using UnityEngine;
@@ -6,9 +7,12 @@ namespace Runtime.Player
 {
     public class PlayerWeaponsManager : NetworkBehaviour
     {
-        public Transform weaponParent;
         public Weapon currentWeapon;
         public Weapon[] weaponSlots = new Weapon[2];
+
+        private PlayerController player;
+
+        private void Awake() { player = GetComponentInParent<PlayerController>(); }
 
         [Rpc(SendTo.Everyone)]
         public void SwitchToWeaponSlotRpc(int index)
@@ -17,10 +21,11 @@ namespace Runtime.Player
             currentWeapon = weaponSlots[index];
             if (currentWeapon != null) currentWeapon.gameObject.SetActive(true);
         }
-        
+
         [ServerRpc]
-        public void PickupWeaponServerRpc(WeaponPickup pickup)
+        public void PickupWeaponServerRpc(NetworkBehaviourReference newWeaponRef)
         {
+            newWeaponRef.TryGet(out Weapon newWeapon);
             var slotIndex = GetCurrentWeaponSlot();
 
             for (var i = 0; i < weaponSlots.Length; i++)
@@ -33,20 +38,17 @@ namespace Runtime.Player
                 }
             }
 
-            var oldWeapon = weaponSlots[slotIndex];
-            var newWeapon = pickup.weapon;
-
+            DropWeaponRpc(slotIndex);
             SetWeaponInSlotRpc(slotIndex, newWeapon);
-            pickup.ChangeWeaponRpc(oldWeapon);
-
+            SwitchToWeaponSlotRpc(slotIndex);
         }
 
         [Rpc(SendTo.Everyone)]
-        private void SetWeaponInSlotRpc(int slotIndex, Weapon weapon)
+        private void SetWeaponInSlotRpc(int slotIndex, NetworkBehaviourReference weaponRef)
         {
+            weaponRef.TryGet(out Weapon weapon);
             weaponSlots[slotIndex] = weapon;
-            weapon.transform.SetParent(weaponParent);
-            weapon.enabled = true;
+            weapon.SetPlayer(player);
         }
 
         [Rpc(SendTo.Everyone)]
@@ -58,9 +60,8 @@ namespace Runtime.Player
                 if (weapon != null)
                 {
                     weapon.DropWeaponServerRpc(transform.position);
-                    weapon.gameObject.SetActive(false);
+                    weaponSlots[slot] = null;
                 }
-                weaponSlots[slot] = null;
             }
         }
 

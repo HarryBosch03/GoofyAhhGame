@@ -25,7 +25,6 @@ namespace Runtime.Weapons
         public ParticleSystem hitFX;
         
         private int currentMagazine;
-        public PlayerController player { get; private set; }
 
         public bool isReloading { get; set; }
         public float reloadPercent { get; set; }
@@ -33,12 +32,14 @@ namespace Runtime.Weapons
 
         public event Action ShootEvent;
 
-        private void Awake()
+        protected override void Awake()
         {
+            base.Awake();
+            
             var main = flashFX.main;
             main.loop = false;
             main.simulationSpace = ParticleSystemSimulationSpace.Custom;
-            main.customSimulationSpace = player.head;
+            main.customSimulationSpace = transform;
             main.stopAction = ParticleSystemStopAction.None;
 
             main = hitFX.main;
@@ -49,8 +50,6 @@ namespace Runtime.Weapons
 
         private void OnEnable()
         {
-            player = GetComponentInParent<PlayerController>();
-            
             if (IsOwner && isReloading)
             {
                 isReloading = false;

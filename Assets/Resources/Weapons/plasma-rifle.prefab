@@ -11,6 +11,8 @@ GameObject:
   - component: {fileID: 486523625083025111}
   - component: {fileID: 1362418375366858306}
   - component: {fileID: 3027435854891340840}
+  - component: {fileID: 6948754446419750471}
+  - component: {fileID: 7131322391298583281}
   m_Layer: 0
   m_Name: plasma-rifle
   m_TagString: Untagged
@@ -48,9 +50,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
-  id: plasma-rifle
   model: {fileID: 1297340304754758202}
-  weaponPickupPrefab: {fileID: 5355633935675828459, guid: b49972bcccfef784b96a1c686c1b6515, type: 3}
   leftHandIkTarget: {fileID: 0}
   rightHandIkTarget: {fileID: 1026945231012248883}
   projectilePrefab: {fileID: 7361446621704407616, guid: 29778c8727d15bb41809247e417a4f0d, type: 3}
@@ -125,6 +125,56 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  droppedHoverHeight: 1.2
+  droppedHoverAmplitude: 0.2
+  droppedHoverFrequency: 2
+  droppedHoverRotation: 90
+--- !u!135 &6948754446419750471
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 226914933619054148}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.4
+  m_Center: {x: 0, y: 1.2, z: 0}
+--- !u!114 &7131322391298583281
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 226914933619054148}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 2962242958
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 0
+  SyncOwnerTransformWhenParented: 0
+  AllowOwnerToParent: 0
 --- !u!1 &800307265546205708
 GameObject:
   m_ObjectHideFlags: 0

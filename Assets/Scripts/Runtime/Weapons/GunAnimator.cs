@@ -1,9 +1,9 @@
-using System;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
 namespace Runtime.Weapons
 {
+    [DefaultExecutionOrder(100)]
     public class GunAnimator : MonoBehaviour
     {
         public Transform target;
@@ -33,6 +33,12 @@ namespace Runtime.Weapons
         public Vector3 reloadOffset;
         public float reloadAnimationDuration;
         public AnimationCurve reloadAnimationCurve;
+
+        [Space]
+        public float droppedHoverHeight;
+        public float droppedHoverAmplitude;
+        public float droppedHoverFrequency;
+        public float droppedHoverRotation;
         
         private SimpleProjectileWeapon weapon;
         private Vector2 lastRotation;
@@ -71,11 +77,49 @@ namespace Runtime.Weapons
             };
         }
 
-        private void LateUpdate()
+        private void Update()
         {
-            if (weapon.player == null || !weapon.isActiveAndEnabled) return;
+            ResetState();
+            if (weapon.player != null)
+            {
+                AnimateWeaponSway();
+                AnimateRecoil();
+                AnimateMovementSway();
+                if (!weapon.player.isActiveViewer) ReposeThirdPerson();
+                if (weapon.isReloading) AnimateReload();
+            }
+            else
+            {
+                AnimateFloating();
+            }
+        }
+
+        private void AnimateFloating()
+        {
+            target.localPosition = Vector3.up * (droppedHoverHeight + Mathf.Sin(Time.time * Mathf.PI * droppedHoverFrequency) * droppedHoverAmplitude);
+            target.localRotation = Quaternion.Euler(-45f, Time.time * droppedHoverRotation, 0f);
+        }
+
+        private void AnimateRecoil()
+        {
+            var headRotation = weapon.player.head.rotation;
             
-            gameObject.layer = weapon.player.isActiveViewer ? 3 : 0;
+            target.position += headRotation * recoilPosition;
+            target.rotation *= Quaternion.Euler(new Vector3(recoilVelocity.z, -recoilVelocity.x, 0f) * recoilSwing);
+            
+            var recoilForce = -recoilPosition * recoilSpring - recoilVelocity * recoilDamping;
+            recoilPosition += recoilVelocity * Time.deltaTime;
+            recoilVelocity += recoilForce * Time.deltaTime;
+        }
+
+        private void ResetState()
+        {
+            gameObject.layer = weapon.player != null && weapon.player.isActiveViewer ? 3 : 0;
+            transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+        }
+
+        private void AnimateWeaponSway()
+        {
             var parentRotation = new Vector2(weapon.player.motor.headRotation.eulerAngles.y, -weapon.player.motor.headRotation.eulerAngles.x);
             var delta = new Vector2()
             {
@@ -86,38 +130,30 @@ namespace Runtime.Weapons
 
             target.position = weapon.player.motor.headPosition + (weapon.player.motor.headRotation * Quaternion.Euler(new Vector3(-smoothedDelta.y, smoothedDelta.x, 0f) * translationSway)) * viewportPosition;
             target.rotation = weapon.player.motor.headRotation * Quaternion.Euler(new Vector3(-smoothedDelta.y, smoothedDelta.x, 0f) * rotationSway) * Quaternion.Euler(viewportRotation);
-
-            target.localPosition += recoilPosition;
-            target.localRotation *= Quaternion.Euler(new Vector3(recoilVelocity.z, -recoilVelocity.x, 0f) * recoilSwing);
-            
-            var recoilForce = -recoilPosition * recoilSpring - recoilVelocity * recoilDamping;
-            recoilPosition += recoilVelocity * Time.deltaTime;
-            recoilVelocity += recoilForce * Time.deltaTime;
-            
             lastRotation = parentRotation;
-            
+        }
+
+        private void AnimateMovementSway()
+        {
             speed = weapon.player.motor.onGround ? new Vector2(weapon.player.motor.velocity.x, weapon.player.motor.velocity.z).magnitude : 0f;
             distance += speed * Time.deltaTime;
             
             target.localPosition += new Vector3(Mathf.Cos(distance * Mathf.PI * moveSwayFrequency), -Mathf.Abs(Mathf.Sin(distance * Mathf.PI * moveSwayFrequency))) * moveSwayAmplitude * speed / weapon.player.motor.maxMoveSpeed;
-                
-            if (!weapon.player.isActiveViewer)
-            {
-                target.position = weapon.player.motor.transform.position + Vector3.up * weapon.player.motor.cameraHeight + weapon.player.motor.transform.rotation * (thirdPersonPosition - thirdPersonPivotOffset) + weapon.player.motor.headRotation * thirdPersonPivotOffset;
-            }
+        }
 
-            if (weapon.isReloading)
-            {
-                var t0 = 0f;
-                var duration = weapon.reloadDuration;
-                var reloadTime = weapon.reloadPercent * duration;
-                if (duration - reloadTime < reloadAnimationDuration) t0 = Mathf.Clamp01((duration - reloadTime) / reloadAnimationDuration);
-                else t0 = Mathf.Clamp01(reloadTime / reloadAnimationDuration);
+        private void ReposeThirdPerson() { target.position = weapon.player.motor.transform.position + Vector3.up * weapon.player.motor.cameraHeight + weapon.player.motor.transform.rotation * (thirdPersonPosition - thirdPersonPivotOffset) + weapon.player.motor.headRotation * thirdPersonPivotOffset; }
 
-                var t1 = reloadAnimationCurve.Evaluate(t0);
-                target.localPosition += reloadOffset * t1;
-                target.localRotation *= Quaternion.Euler(15f * t1, 0f, 0f);
-            }
+        private void AnimateReload()
+        {
+            var t0 = 0f;
+            var duration = weapon.reloadDuration;
+            var reloadTime = weapon.reloadPercent * duration;
+            if (duration - reloadTime < reloadAnimationDuration) t0 = Mathf.Clamp01((duration - reloadTime) / reloadAnimationDuration);
+            else t0 = Mathf.Clamp01(reloadTime / reloadAnimationDuration);
+
+            var t1 = reloadAnimationCurve.Evaluate(t0);
+            target.localPosition += reloadOffset * t1;
+            target.localRotation *= Quaternion.Euler(15f * t1, 0f, 0f);
         }
     }
 }
